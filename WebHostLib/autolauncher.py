@@ -155,7 +155,7 @@ def autogen(config: dict):
                         time.sleep(0.1)
                         with db_session:
                             to_start = select(
-                                generation for generation in Generation if generation.state == STATE_QUEUED)
+                                generation for generation in Generation if generation.state == STATE_QUEUED).for_update()
                             for generation in to_start:
                                 launch_generator(generator_pool, generation)
         except AlreadyRunningException:
