@@ -1,26 +1,24 @@
 from BaseClasses import Item, ItemClassification
+from worlds.neon_white import Locations
 
 base_item_namespace = 2874297668000000
 
-chapter_unlock_offset = 1000
+level_unlock_offset = 1000
 cards_offset = 2000
 card_abilities_offset = 3000
 insight_offset = 4000
+neon_rank_offset = 5000
 
-chapters = [
-    'M01 Rebirth',
-    'M02 Killer Inside',
-    'M03 Only Shallow',
-    'M04 The Old City',
-    'M05 The Burn That Cures',
-    'M06 Covenant',
-    'M07 Reckoning',
-    'M08 Benediction',
-    'M09 Apocrypha',
-    'M10 The Third Temple',
-    'M11 Thousand Pound Butterfly',
-    'M12 Hand of God'
-]
+levels = []
+
+chapter_num = 1
+for chapter in Locations.job_names:
+    level_num = 1
+    for level in chapter:
+        levels.append(f'M{chapter_num:02d}L{level_num:02d} {level}')
+        level_num += 1
+
+    chapter_num += 1
 
 cards = [
     'Card: Katana',
@@ -52,13 +50,17 @@ insights = [
     ('Insight: Green', 4)
 ]
 
+neon_rank = [
+    ('Neon Rank', 100)
+]
+
 all_items = {}
 item_name_to_id = {}
 
 item_individual_offset = 0
-for chapter in chapters:
-    all_items[chapter] = 1
-    item_name_to_id[chapter] = base_item_namespace + chapter_unlock_offset + item_individual_offset
+for level in levels:
+    all_items[level] = 1
+    item_name_to_id[level] = base_item_namespace + level_unlock_offset + item_individual_offset
     item_individual_offset += 1
 
 item_individual_offset = 0
@@ -79,21 +81,26 @@ for (name, count) in insights:
     item_name_to_id[name] = base_item_namespace + insight_offset + item_individual_offset
     item_individual_offset += 1
 
+all_items['Neon Rank'] = 100
+item_name_to_id['Neon Rank'] = base_item_namespace + neon_rank_offset
+
 item_name_groups = {
-    'Chapters': set(chapters),
+    'Levels': set(levels),
     'Cards': set(cards),
     'CardAbilities': set(card_abilities),
-    'Insights': set([name for (name, _) in insights])
+    'Insights': set([name for (name, _) in insights]),
+    'NeonRank': {'Neon Rank'}
 }
 
 
-progression_items = set(chapters) | set(cards) | set(card_abilities)
+progression_items = {'Neon Rank'} | set(cards) | set(card_abilities) | {'M12L02 Absolution'}
+useful_items = set(levels) | {'Insight: Yellow', 'Insight: Red', 'Insight: Violet'}
 
 
 def item_classification(item: str) -> ItemClassification:
     if item in progression_items:
         return ItemClassification.progression
-    elif item in cards or item in card_abilities:
+    elif item in useful_items:
         return ItemClassification.useful
     else:
         return ItemClassification.filler

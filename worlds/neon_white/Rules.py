@@ -572,4 +572,12 @@ def cascade_medals(jm: NeonWhiteLocationsJobMedals[Variable[bool]]) -> NeonWhite
     return plus
 
 
-reachability_full = reachability.map_medals(cascade_medals)
+def level_required(path: list[str], variable: Variable[bool]) -> Variable[bool]:
+    if path[0] == "jobs":
+        from worlds.neon_white.Locations import level_name_lfunct
+        return variable & HasItemVariable(level_name_lfunct.lget(path[1:]))
+    else:
+        return variable
+
+
+reachability_full = reachability.map_medals(cascade_medals).lmap([], level_required)

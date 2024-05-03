@@ -3,7 +3,7 @@ from worlds.AutoWorld import WebWorld, World
 
 from .Items import (item_name_to_id as i_item_name_to_id, all_items as i_all_items,
                     item_name_groups as i_item_name_groups, item_classification as i_item_classification, NeonWhiteItem,
-                    chapters as i_chapters)
+                    levels as i_levels)
 
 from .Locations import location_name_to_id as l_location_name_to_id, all_locations as l_all_locations, \
     job_names as l_job_names, NeonWhiteLocation, giftless_jobs as l_giftless_jobs, \
@@ -48,6 +48,22 @@ class NeonWhiteWorld(World):
         self.reward_gifts = self.options.reward_gifts.value
         self.reward_sidequests = self.options.reward_sidequests.value
 
+        self.location_count = 0
+        for chapter in range(0, 12):
+            chapter_l = l_job_names[chapter]
+            job_idx = 1
+            for job in chapter_l:
+                self.location_count += len(self.reward_medals)
+
+                if job not in l_giftless_jobs and self.reward_gifts:
+                    self.location_count += 1
+
+                job_idx += 1
+
+        if self.reward_sidequests:
+            for (companion, companion_l) in l_companion_sidequests:
+                self.location_count += len(companion_l)
+
     def create_item(self, name: str) -> NeonWhiteItem:
         return NeonWhiteItem(name, i_item_classification(name), self.item_name_to_id[name], self.player)
 
@@ -57,13 +73,12 @@ class NeonWhiteWorld(World):
     def create_items(self) -> None:
         # TODO: exclusions
         total_item_count = 0
-        location_count = len(l_all_locations)
         for item_name in i_all_items:
             count = i_all_items[item_name]
             total_item_count += count
             self.multiworld.itempool += [self.create_item(item_name) for _ in range(count)]
 
-        junk = location_count - total_item_count
+        junk = self.location_count - total_item_count
         # TODO: actual junk items
         self.multiworld.itempool += [self.create_item('Insight: Green') for _ in range(junk)]
 
@@ -92,12 +107,10 @@ class NeonWhiteWorld(World):
             chapter_region.add_locations(chapter_dict, NeonWhiteLocation)
 
             if chapter == 11:
-                absolution_loc = NeonWhiteLocation(self.player, 'M12L02 Absolution: Clear', None, chapter_region)
+                absolution_loc = NeonWhiteLocation(self.player, 'M12L02 Absolution: Clear', None, menu_region)
                 chapter_region.locations.append(absolution_loc)
 
-            def has_item_capture(item: str):
-                return lambda state: state.has(item, self.player)
-            menu_region.connect(chapter_region, rule=has_item_capture(i_chapters[chapter]))
+            menu_region.connect(chapter_region)
 
         if self.reward_sidequests:
             for (companion, companion_l) in l_companion_sidequests:
@@ -136,7 +149,17 @@ class NeonWhiteWorld(World):
 
         reachability_full.lmap([], lset_rule)
 
+        def clear_rule(state) -> bool:
+            has_level = state.has('M12L02 Absolution', self.player)
+            has_cards = state.has(
+                'Card: Book of Life', self.player
+            ) and state.has(
+                'Ability: Book of Life', self.player
+            ) and state.has(
+                'Card: Dominion', self.player
+            )
+            has_rank = state.has('Neon Rank', self.player, 70)
+            return has_level and has_cards and has_rank
+
         set_rule(self.multiworld.get_location('M12L02 Absolution: Clear', self.player),
-                 lambda state: state.has('Card: Book of Life', self.player) and
-                               state.has('Ability: Book of Life', self.player) and
-                               state.has('Card: Dominion', self.player))
+                 clear_rule)
