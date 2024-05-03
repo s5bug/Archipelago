@@ -549,6 +549,7 @@ all_locations = []
 location_name_to_id = {}
 location_name_to_path = {}
 location_name_lfunct: NeonWhiteLocations[str] = NeonWhiteLocations.deep_empty()
+level_name_lfunct: NeonWhiteLocationsJobs[str] = NeonWhiteLocationsJobs.deep_empty()
 
 medal_name_offsets = [
     ('Bronze', job_bronze_offset),
@@ -563,11 +564,13 @@ chapter_idx = 0
 for chapter_field in dataclasses.fields(location_name_lfunct.jobs):
     chapter_path = ["jobs", chapter_field.name]
     chapter_lfunct = getattr(location_name_lfunct.jobs, chapter_field.name)
+    chapter_lname_lfunct = getattr(level_name_lfunct, chapter_field.name)
     job_name_list = job_names[chapter_idx]
     job_idx = 0
     for job_field in dataclasses.fields(chapter_lfunct):
         job_path = chapter_path + [job_field.name]
         job_lfunct = getattr(chapter_lfunct, job_field.name)
+        job_lname_lfunct = getattr(chapter_lname_lfunct, job_field.name)
         job_full_name = f'M{chapter_idx + 1:02d}L{job_idx + 1:02d} {job_name_list[job_idx]}'
 
         for (medal_name, offset) in medal_name_offsets:
@@ -577,6 +580,7 @@ for chapter_field in dataclasses.fields(location_name_lfunct.jobs):
             location_name_to_id[medal_full_name] = base_location_namespace + offset + total_job_id
             location_name_to_path[medal_full_name] = medal_path
             setattr(job_lfunct, medal_field_name, medal_full_name)
+            setattr(job_lname_lfunct, medal_field_name, job_full_name)
             all_locations.append(medal_full_name)
 
         if hasattr(job_lfunct, 'gift'):
@@ -585,6 +589,7 @@ for chapter_field in dataclasses.fields(location_name_lfunct.jobs):
             location_name_to_id[gift_full_name] = base_location_namespace + job_gift_offset + total_job_id
             location_name_to_path[gift_full_name] = gift_path
             setattr(job_lfunct, 'gift', gift_full_name)
+            setattr(job_lname_lfunct, 'gift', job_full_name)
             all_locations.append(gift_full_name)
 
         total_job_id += 1
